@@ -1,0 +1,28 @@
+linters-settings:
+  lll:
+    line-length: 140
+  nolintlint:
+    allow-unused: false
+    require-specific: true
+    require-explanation: true
+  varnamelen:
+    min-name-length: 2
+    ignore-decls:
+      - w http.ResponseWriter
+      - i int
+      - r *http.Request
+
+linters:
+  enable-all: true
+  disable:
+    - tagliatelle
+    - depguard
+    - exhaustruct
+    - gomnd
+    - wsl
+    - mnd
+    - nilerr
+    - nlreturn
+    - funlen
+    - errchkjson
+    - testpackage

@@ -1,0 +1,167 @@
+### Fetch users
+GET {{scheme}}{{addr}}/users
+
+> {%
+    client.test("Returns expected status", function() {
+        let expect = 200
+        let got = response.status
+        client.assert(got === expect, `Expected: ${expect} \nGot: ${got}`)
+    })
+    client.test("Content-Type header", function() {
+        let expect = "application/json"
+        let got = response.headers.valueOf("Content-Type")
+        client.assert( got == expect, `Expected: ${expect} \nGot: ${got}`)
+    })
+    client.test("Validate each object is a user", function() {
+        for(let user of response.body) {
+            client.assert( user.id !== "undefined", `User ID undefined`)
+            client.assert( user.name !== "undefined", `User name undefined`)
+            client.assert( user.email !== "undefined", `User email undefined`)
+        }
+    })
+%}
+
+### Create a user
+POST {{scheme}}{{addr}}/users
+Content-Type: application/json
+
+{
+  "name": "John Q. Public",
+  "email": "john@public.com"
+}
+
+
+> {%
+    client.test("Returns expected status", function() {
+        let expect = 201
+        let got = response.status
+        client.assert( got == expect, `Expected: ${expect} \nGot: ${got}`)
+    })
+    client.test("User ID", function() {
+        let got = response.body.id
+        client.assert(got > 0, `Expected: >0 \nGot: ${got}`)
+        client.global.set("_users_test_userID", got)
+    })
+    client.test("User name", function() {
+        let expect = "John Q. Public"
+        let got = response.body.name
+        client.assert(got === expect, `Expected: ${expect} \nGot: ${got}`)
+    })
+    client.test("User email", function() {
+        let expect = "john@public.com"
+        let got = response.body.email
+        client.assert(got === expect, `Expected: ${expect} \nGot: ${got}`)
+    })
+%}
+
+
+### Get a valid user
+GET {{scheme}}{{addr}}/users/{{_users_test_userID}}
+Content-Type: application/json
+
+> {%
+    client.test("Returns expected status", function() {
+        let expect = 200
+        let got = response.status
+        client.assert( got == expect, `Expected: ${expect} \nGot: ${got}`)
+    })
+    client.test("User ID", function() {
+        let expect = client.global.get("_users_test_userID")
+        let got = response.body.id
+        client.assert(got == expect, `Expected: ${expect} \nGot: ${got}`)
+    })
+    client.test("User name", function() {
+        let expect = "John Q. Public"
+        let got = response.body.name
+        client.assert(got === expect, `Expected: ${expect} \nGot: ${got}`)
+    })
+    client.test("User email", function() {
+        let expect = "john@public.com"
+        let got = response.body.email
+        client.assert(got === expect, `Expected: ${expect} \nGot: ${got}`)
+    })
+%}
+
+### Get a user that doesn't exist
+GET {{scheme}}{{addr}}/users/0
+Content-Type: application/json
+
+> {%
+    client.test("Returns expected status", function() {
+        let expect = 404
+        let got = response.status
+        client.assert( got == expect, `Expected: ${expect} \nGot: ${got}`)
+    })
+%}
+
+
+### Update a user that exists
+PUT {{scheme}}{{addr}}/users/{{_users_test_userID}}
+Content-Type: application/json
+
+{
+  "name": "Jane Q. Public",
+  "email": "jane@public.com"
+}
+
+> {%
+    client.test("Returns expected status", function() {
+        let expect = 200
+        let got = response.status
+        client.assert( got == expect, `Expected: ${expect} \nGot: ${got}`)
+    })
+    client.test("User ID", function() {
+        let expect = client.global.get("_users_test_userID")
+        let got = response.body.id
+        client.assert(got == expect, `Expected: ${expect} \nGot: ${got}`)
+    })
+    client.test("User name", function() {
+        let expect = "Jane Q. Public"
+        let got = response.body.name
+        client.assert(got === expect, `Expected: ${expect} \nGot: ${got}`)
+    })
+    client.test("User email", function() {
+        let expect = "jane@public.com"
+        let got = response.body.email
+        client.assert(got === expect, `Expected: ${expect} \nGot: ${got}`)
+    })
+%}
+
+### Update a user that doesn't exist
+PUT {{scheme}}{{addr}}/users/0
+Content-Type: application/json
+
+{
+  "name": "does not matter",
+  "email": "does@notmatter.com"
+}
+
+> {%
+    client.test("Returns expected status", function() {
+        let expect = 404
+        let got = response.status
+        client.assert( got == expect, `Expected: ${expect} \nGot: ${got}`)
+    })
+%}
+
+### Delete user that exists
+DELETE {{scheme}}{{addr}}/users/{{_users_test_userID}}
+
+> {%
+    client.test("Returns expected status", function() {
+        let expect = 204
+        let got = response.status
+        client.assert( got == expect, `Expected: ${expect} \nGot: ${got}`)
+    })
+%}
+
+### Delete user that does not exist
+DELETE {{scheme}}{{addr}}/users/0
+
+> {%
+    client.test("Returns expected status", function() {
+        let expect = 404
+        let got = response.status
+        client.assert( got == expect, `Expected: ${expect} \nGot: ${got}`)
+    })
+%}
