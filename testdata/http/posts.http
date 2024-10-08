@@ -207,3 +207,14 @@ DELETE {{scheme}}{{addr}}/posts/0
         client.assert( got == expect, `Expected: ${expect} \nGot: ${got}`)
     })
 %}
+
+### Delete user created for tests
+DELETE {{scheme}}{{addr}}/users/{{_posts_test_userID}}
+
+> {%
+    client.test("Returns expected status", function() {
+        let expect = 204
+        let got = response.status
+        client.assert( got == expect, `Expected: ${expect} \nGot: ${got}`)
+    })
+%}
