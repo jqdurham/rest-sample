@@ -23,4 +23,4 @@ See `make help` to learn how to run the application with default settings, execu
 
 ## Deployment
 
-This is deployed on a [small EC2 instance](http://52.23.252.97:8080/users) for demo purposes.  There is a `make` target to build and copy the binary to the demo server, but it requires SSH configuration that is available in this repo.
+This is deployed on a [small EC2 instance](http://52.23.252.97:8080/users) for demo purposes.  There is a `make` target to build and copy the binary to the demo server, but it requires SSH configuration that is not available in this repo.
