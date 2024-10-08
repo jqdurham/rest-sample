@@ -18,3 +18,9 @@ lint: ## run linters using golangci-lint configuration file (default lookup)
 
 run: ## run the RESTful server
 	CGO_ENABLED=false go run ./cmd/rest/main.go
+
+build-linux:
+	GOOS=linux GOARCH=amd64 go build -o rest-sample cmd/rest/main.go
+	scp ./rest-sample rest-sample:~/rest-sample
+	rm ./rest-sample
+

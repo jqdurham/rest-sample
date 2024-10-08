@@ -20,3 +20,7 @@ Integration tests are using IntellJ's HTTP client.  This was a new endeavor for 
 ## Makefile
 
 See `make help` to learn how to run the application with default settings, execute tests, check for CVEs and execute 100+ linters.
+
+## Deployment
+
+This is deployed on a [small EC2 instance](http://52.23.252.97:8080/users) for demo purposes.  There is a `make` target to build and copy the binary to the demo server, but it requires SSH configuration that is available in this repo.
