@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"github.com/felixge/httpsnoop"
+	"github.com/phsym/console-slog"
+
 	"github.com/jqdurham/rest-sample/internal/api"
 	"github.com/jqdurham/rest-sample/internal/api/oapi"
 	"github.com/jqdurham/rest-sample/internal/post"
@@ -37,6 +39,7 @@ func main() {
 
 	var addr string
 	flag.StringVar(&addr, "addr", ":8080", "Server listen address")
+	flag.Parse()
 
 	userSvc := user.NewService()
 	postSvc := post.NewService(userSvc)
