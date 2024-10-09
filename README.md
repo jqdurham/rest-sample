@@ -1,6 +1,6 @@
 # RESTful API Sample Application
 
-This application provides a very basic Go RESTful web server intended to run on http://localhost:8080. The API writes data to in-memory caches which are wiped clean upon restart. The RESTful components of this API are generated from a OpenAPI 3.0 [document](docs/openapi.json), ensuring code stays in alignment with the documentation.
+This application provides a very basic Go RESTful web server intended to run on http://localhost:8080. The API writes data to in-memory caches which are wiped clean upon restart. The RESTful components of this API are generated from an OpenAPI 3.0 [document](docs/openapi.json), ensuring code stays in alignment with the documentation.
 
 ### Requirements
 
