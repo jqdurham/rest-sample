@@ -1,28 +1,50 @@
-linters-settings:
-  lll:
-    line-length: 140
-  nolintlint:
-    allow-unused: false
-    require-specific: true
-    require-explanation: true
-  varnamelen:
-    min-name-length: 2
-    ignore-decls:
-      - w http.ResponseWriter
-      - i int
-      - r *http.Request
-
+version: "2"
 linters:
-  enable-all: true
+  default: all
   disable:
-    - tagliatelle
     - depguard
+    - errchkjson
     - exhaustruct
-    - gomnd
-    - wsl
+    - funlen
     - mnd
     - nilerr
     - nlreturn
-    - funlen
-    - errchkjson
+    - tagliatelle
     - testpackage
+    - wsl
+    - wsl_v5
+    - noinlineerr
+  settings:
+    lll:
+      line-length: 140
+    nolintlint:
+      require-explanation: true
+      require-specific: true
+      allow-unused: false
+    varnamelen:
+      min-name-length: 2
+      ignore-decls:
+        - w http.ResponseWriter
+        - i int
+        - r *http.Request
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gci
+    - gofumpt
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

@@ -4,4 +4,4 @@ generate:
   std-http-server: true
   embedded-spec: true
   models: true
-output: ../../internal/api/oapi/rest.gen.go
+output: ../../cmd/rest/handlers/oapi/rest.gen.go

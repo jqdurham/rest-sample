@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
@@ -13,73 +14,86 @@ import (
 	"time"
 
 	"github.com/felixge/httpsnoop"
-	"github.com/phsym/console-slog"
-
-	"github.com/jqdurham/rest-sample/internal/api"
-	"github.com/jqdurham/rest-sample/internal/api/oapi"
+	"github.com/jqdurham/rest-sample/cmd/rest/handlers"
+	"github.com/jqdurham/rest-sample/cmd/rest/handlers/oapi"
 	"github.com/jqdurham/rest-sample/internal/post"
 	"github.com/jqdurham/rest-sample/internal/user"
 	middleware "github.com/oapi-codegen/nethttp-middleware"
+	"github.com/phsym/console-slog"
+	"golang.org/x/sync/errgroup"
 )
 
-//go:generate go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen --config=../../.oapi-codegen.yaml ../../docs/openapi.json
+//go:generate go tool oapi-codegen --config=../../.oapi-codegen.yaml ../../docs/openapi.json
 
 func main() {
+	log := slog.New(console.NewHandler(os.Stderr, &console.HandlerOptions{Level: slog.LevelDebug}))
+	slog.SetDefault(log)
+
+	if err := run(log); err != nil {
+		slog.Error(err.Error())
+		os.Exit(1)
+	}
+}
+
+func run(log *slog.Logger) error {
+	log.Info("Application starting")
 	defer func(start time.Time) {
-		slog.Info("Application shutdown", "uptime", time.Since(start))
+		log.Info("Application shutdown", "uptime", time.Since(start))
 	}(time.Now())
-
-	logr := slog.New(console.NewHandler(os.Stderr, &console.HandlerOptions{Level: slog.LevelDebug}))
-	slog.SetDefault(logr)
-
-	slog.Info("Application starting")
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 	defer stop()
 
 	var addr string
-	flag.StringVar(&addr, "addr", ":8080", "Server listen address")
+	flag.StringVar(&addr, "addr", "127.0.0.1:8080", "Server listen address")
 	flag.Parse()
 
 	userSvc := user.NewService()
 	postSvc := post.NewService(userSvc)
-	srvHandler := api.NewServerHandler(userSvc, postSvc)
+	srvHandler := handlers.NewServerHandler(userSvc, postSvc)
 
 	router := http.NewServeMux()
 	oapi.HandlerFromMux(srvHandler, router)
 
 	swagger, err := oapi.GetSwagger()
 	if err != nil {
-		fatal(err)
+		return fmt.Errorf("load swagger: %w", err)
 	}
 
-	// https://github.com/oapi-codegen/oapi-codegen/issues/882
+	// Disable Host header validation. See https://github.com/deepmap/oapi-codegen/issues/882
 	swagger.Servers = nil
 
-	h := middleware.OapiRequestValidator(swagger)(router)
-	h = logRequestHandler(h)
-
-	srv := &http.Server{
+	svr := &http.Server{
 		Addr:    addr,
-		Handler: h,
+		Handler: requestLoggerHandler(log,  middleware.OapiRequestValidator(swagger)(router)),
 		BaseContext: func(_ net.Listener) context.Context {
 			return ctx
 		},
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
-	go func() {
-		slog.Info("API server starting", "addr", addr)
-		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			slog.Error("API server error", "error", err)
-			stop()
-		}
-	}()
+	eg, ctx := errgroup.WithContext(ctx)
 
-	<-ctx.Done()
+	eg.Go(func() error {
+		log.Info("API server starting", "addr", addr)
+		defer log.Info("API server shutdown")
+		if err := svr.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			return fmt.Errorf("listen: %w", err)
+		}
+		return nil
+	})
+
+	eg.Go(func() error {
+		<-ctx.Done()
+		stopCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		return svr.Shutdown(stopCtx)
+	})
+
+	return errors.Unwrap(eg.Wait())
 }
 
-func logRequestHandler(h http.Handler) http.Handler {
+func requestLoggerHandler(log *slog.Logger, h http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		var (
 			level   = slog.LevelInfo
@@ -92,7 +106,7 @@ func logRequestHandler(h http.Handler) http.Handler {
 			level = slog.LevelError
 		}
 
-		slog.Log(r.Context(), level,
+		log.Log(r.Context(), level,
 			"request handled",
 			slog.String("method", r.Method),
 			slog.String("url", r.URL.String()),
@@ -104,9 +118,4 @@ func logRequestHandler(h http.Handler) http.Handler {
 		)
 	}
 	return http.HandlerFunc(fn)
-}
-
-func fatal(err error) {
-	slog.Error(err.Error())
-	os.Exit(1)
 }
